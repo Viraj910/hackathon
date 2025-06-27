@@ -1,0 +1,76 @@
+{
+  "patients": {
+    "patient1": {
+      "password": "pass123",
+      "display_name": "Patient One",
+      "status": "active"
+    },
+    "john_doe": {
+      "password": "patient123",
+      "display_name": "John Doe",
+      "status": "active"
+    },
+    "jane_smith": {
+      "password": "mypass456",
+      "display_name": "Jane Smith",
+      "status": "active"
+    },
+    "mary_johnson": {
+      "password": "patient456",
+      "display_name": "Mary Johnson",
+      "status": "active"
+    },
+    "robert_wilson": {
+      "password": "patient789",
+      "display_name": "Robert Wilson",
+      "status": "active"
+    }
+  },
+  "doctors": {
+    "dr_smith": {
+      "password": "doctor123",
+      "display_name": "Dr. Smith",
+      "status": "active",
+      "department": "General Medicine",
+      "assigned_hospital": "City General Hospital"
+    },
+    "dr_johnson": {
+      "password": "medical456",
+      "display_name": "Dr. Johnson",
+      "status": "active",
+      "department": "Cardiology",
+      "assigned_hospital": "Central Medical Center"
+    },
+    "dr_brown": {
+      "password": "doctor789",
+      "display_name": "Dr. Brown",
+      "status": "active",
+      "department": "Emergency",
+      "assigned_hospital": "Specialized Cardiac Care"
+    },
+    "dr_davis": {
+      "password": "doctor456",
+      "display_name": "Dr. Davis",
+      "status": "active",
+      "department": "Pediatrics",
+      "assigned_hospital": "Women's Health Clinic"
+    }
+  },
+  "admins": {
+    "admin": {
+      "password": "admin123",
+      "display_name": "System Admin",
+      "status": "active"
+    },
+    "superadmin": {
+      "password": "super456",
+      "display_name": "Super Admin",
+      "status": "active"
+    },
+    "hospital_admin": {
+      "password": "hospital789",
+      "display_name": "Hospital Admin",
+      "status": "active"
+    }
+  }
+}

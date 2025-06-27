@@ -1,0 +1,27 @@
+[
+  {
+    "id": "hospital1",
+    "name": "City General Hospital",
+    "description": "Emergency & Trauma Center"
+  },
+  {
+    "id": "hospital2",
+    "name": "Central Medical Center",
+    "description": "Comprehensive Healthcare Services"
+  },
+  {
+    "id": "hospital3",
+    "name": "Specialized Cardiac Care",
+    "description": "Heart & Cardiovascular Treatment"
+  },
+  {
+    "id": "hospital4",
+    "name": "Women's Health Clinic",
+    "description": "Gynecology & Maternity Care"
+  },
+  {
+    "id": "hospital5",
+    "name": "Pediatric Medical Center",
+    "description": "Children's Healthcare & Family Medicine"
+  }
+]

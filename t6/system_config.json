@@ -1,0 +1,12 @@
+{
+  "last_token_number": {
+    "Hospital 1_2025-06-28": 8,
+    "Hospital 2_2025-06-28": 2,
+    "City General Hospital_2025-06-28": 3,
+    "Central Medical Center_2025-06-28": 1
+  },
+  "last_data_clear": "2025-06-28T03:17:52.993649",
+  "restart_requested": "2025-06-28T03:18:12.336668",
+  "restart_by": "System Admin",
+  "last_cache_clear": "2025-06-28T03:18:37.904302"
+}

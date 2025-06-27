@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token & Appointment Status - Hospital Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .slot-card {
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        .slot-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .slot-full {
+            border-left-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        .slot-moderate {
+            border-left-color: #ffc107;
+            background-color: #fffdf0;
+        }
+        .slot-available {
+            border-left-color: #28a745;
+            background-color: #f0fff4;
+        }
+        .patient-token {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            background-color: #e9ecef;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .current-token {
+            background-color: #007bff;
+            color: white;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-hospital me-2"></i>Hospital Management
+            </a>
+            <div class="navbar-nav ms-auto">
+                {% if session.get('user_role') == 'doctor' %}
+                <a class="nav-link" href="{{ url_for('doctor_dashboard') }}">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+                {% else %}
+                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="fw-bold mb-3">
+                    <i class="fas fa-ticket-alt me-2"></i>Token & Appointment Status
+                </h2>
+                
+                <!-- Hospital Filter -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <form method="GET" class="d-flex">
+                            <select name="hospital" class="form-select me-2" onchange="this.form.submit()">
+                                <option value="">All Hospitals</option>
+                                {% for hospital in hospital_files %}
+                                <option value="{{ hospital.hospital_name }}" 
+                                    {% if selected_hospital == hospital.hospital_name %}selected{% endif %}>
+                                    {{ hospital.hospital_name }} ({{ hospital.patient_count }} patients)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card p-3 text-center">
+                    <h3 class="mb-0">{{ total_patients }}</h3>
+                    <p class="mb-0">Total Patients</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-success mb-0">{{ (slot_data.values() | selectattr('total_patients', '<', 20) | list | length) }}</h3>
+                        <p class="mb-0">Available Slots</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-warning mb-0">{{ (slot_data.values() | selectattr('total_patients', '>=', 20) | selectattr('total_patients', '<', 50) | list | length) }}</h3>
+                        <p class="mb-0">Moderate Slots</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-danger mb-0">{{ (slot_data.values() | selectattr('total_patients', '>=', 50) | list | length) }}</h3>
+                        <p class="mb-0">Full/Busy Slots</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Slots -->
+        <div class="row">
+            {% for slot_num, slot_info in slot_data.items() %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card slot-card 
+                    {% if slot_info.total_patients >= 50 %}slot-full
+                    {% elif slot_info.total_patients >= 20 %}slot-moderate
+                    {% else %}slot-available{% endif %}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>Slot {{ slot_num }}
+                        </h6>
+                        <span class="badge 
+                            {% if slot_info.total_patients >= 50 %}bg-danger
+                            {% elif slot_info.total_patients >= 20 %}bg-warning
+                            {% else %}bg-success{% endif %}">
+                            {{ slot_info.total_patients }}/60
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text fw-bold">{{ slot_info.time_range }}</p>
+                        
+                        {% if slot_info.patients %}
+                        <div class="mb-3">
+                            <small class="text-muted">Patient Tokens:</small>
+                            <div class="mt-2">
+                                {% for patient in slot_info.patients[:20] %}
+                                <span class="patient-token {% if loop.index == 1 %}current-token{% endif %}">
+                                    #{{ patient.get('token_number', 'N/A') }}
+                                </span>
+                                {% endfor %}
+                                {% if slot_info.patients | length > 20 %}
+                                <span class="patient-token">... +{{ slot_info.patients | length - 20 }} more</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar 
+                                {% if slot_info.total_patients >= 50 %}bg-danger
+                                {% elif slot_info.total_patients >= 20 %}bg-warning
+                                {% else %}bg-success{% endif %}" 
+                                style="width: {{ (slot_info.total_patients / 60 * 100) | round(1) }}%"></div>
+                        </div>
+                        
+                        <small class="text-muted">
+                            {{ 60 - slot_info.total_patients }} slots remaining
+                            {% if slot_info.total_patients > 0 %}
+                            • Est. wait: {{ (slot_info.total_patients * 5) }} min
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Legend -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-light">
+                    <h6><i class="fas fa-info-circle me-2"></i>Legend:</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <span class="badge bg-success me-2">Available</span> Less than 20 patients
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge bg-warning me-2">Moderate</span> 20-49 patients
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge bg-danger me-2">Full/Busy</span> 50+ patients
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="mb-0">
+                        <strong>Hospital Hours:</strong> 7:30 AM - 8:30 PM | 
+                        <strong>Each Slot:</strong> 1 hour duration | 
+                        <strong>Capacity:</strong> 60 patients per slot |
+                        <strong>Avg. Time per Patient:</strong> 5 minutes
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

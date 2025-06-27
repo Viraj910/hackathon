@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Management - Hospital Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .page-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 2rem;
+        }
+        .patient-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: none;
+            transition: transform 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .patient-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .patient-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .status-new {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-reviewed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .search-box {
+            background: white;
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('doctor_dashboard') }}">
+                <i class="fas fa-hospital-alt me-2 text-primary"></i>
+                Hospital System
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                {% if session.user_name %}
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-md me-1"></i>
+                        Dr. {{ session.user_name }}
+                    </span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div style="margin-top: 76px;"></div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="fas fa-users me-3"></i>
+                        Patient Management
+                    </h1>
+                    <p class="mb-0 opacity-75">Manage and review patient records</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{{ url_for('hospital_selection') }}" class="btn btn-success me-2">
+                        <i class="fas fa-plus me-2"></i>Add New Patient
+                    </a>
+                    {% if session.user_role == 'doctor' %}
+                    <a href="{{ url_for('view_tokens') }}" class="btn btn-info me-2">
+                        <i class="fas fa-calendar-check me-2"></i>Token Status
+                    </a>
+                    {% endif %}
+                    {% if session.get('user_role') == 'doctor' %}
+                    <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        <!-- Search and Filter -->
+        <div class="search-box">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search patients by name, age, or phone...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="genderFilter">
+                        <option value="">All Genders</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortBy">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name">By Name</option>
+                        <option value="age">By Age</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Export Buttons -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-end">
+                        {% if session.user_role == 'admin' %}
+                            <button type="button" class="btn btn-success" id="exportAllBtn">
+                                <i class="fas fa-download me-2"></i>Export All to CSV
+                            </button>
+                            <button type="button" class="btn btn-outline-success" id="exportFilteredBtn">
+                                <i class="fas fa-filter me-2"></i>Export Filtered CSV
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#advancedExportModal">
+                                <i class="fas fa-cog me-2"></i>Advanced Export
+                            </button>
+                        {% elif session.user_role == 'doctor' %}
+                            <button type="button" class="btn btn-success" id="exportBasicBtn">
+                                <i class="fas fa-download me-2"></i>Export Basic Data
+                            </button>
+                            <small class="text-muted align-self-center ms-2">
+                                <i class="fas fa-info-circle me-1"></i>Limited access - basic medical data only
+                            </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-primary">{{ stats.total_patients }}</h3>
+                        <p class="text-muted mb-0">Total Patients</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-success">{{ stats.this_month }}</h3>
+                        <p class="text-muted mb-0">This Month</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-warning">{{ stats.male_patients }}</h3>
+                        <p class="text-muted mb-0">Male Patients</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-info">{{ stats.female_patients }}</h3>
+                        <p class="text-muted mb-0">Female Patients</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Token Statistics for Doctors -->
+        {% if session.user_role == 'doctor' %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card text-center border-primary">
+                    <div class="card-body">
+                        <i class="fas fa-ticket-alt text-primary fa-2x mb-2"></i>
+                        <h3 class="text-primary">{{ stats.patients_with_tokens }}</h3>
+                        <p class="text-muted mb-0">Patients with Tokens</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card text-center border-success">
+                    <div class="card-body">
+                        <i class="fas fa-calendar-day text-success fa-2x mb-2"></i>
+                        <h3 class="text-success">{{ stats.today_tokens }}</h3>
+                        <p class="text-muted mb-0">Today's Appointments</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Patient List -->
+        {% if patients %}
+            <div id="patientList">
+                {% for patient in patients %}
+                <div class="patient-card card" data-patient-id="{{ loop.index0 }}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h5 class="card-title mb-1">
+                                            <i class="fas fa-user me-2"></i>
+                                            {{ patient.get('firstName', '') }} {{ patient.get('lastName', '') }}
+                                        </h5>
+                                        <p class="text-muted mb-1">
+                                            <i class="fas fa-birthday-cake me-1"></i>
+                                            Age: {{ patient.get('age', 'N/A') }}
+                                            {% if patient.get('gender') %}
+                                                | {{ patient.get('gender')|title }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-muted mb-0">
+                                            <i class="fas fa-phone me-1"></i>
+                                            {{ patient.get('phone', 'N/A') }}
+                                        </p>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <p class="text-muted mb-1">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ patient.get('timestamp', 'N/A') }}
+                                        </p>
+                                        {% if patient.get('token_number') %}
+                                            <p class="text-primary mb-1">
+                                                <i class="fas fa-ticket-alt me-1"></i>
+                                                Token: <strong>#{{ patient.get('token_number') }}</strong>
+                                                {% if patient.get('time_range') %}
+                                                    | {{ patient.get('time_range') }}
+                                                {% endif %}
+                                            </p>
+                                        {% endif %}
+                                        {% if patient.get('selected_hospital') %}
+                                            <p class="text-info mb-1">
+                                                <i class="fas fa-hospital me-1"></i>
+                                                {{ patient.get('selected_hospital') }}
+                                            </p>
+                                        {% endif %}
+                                        {% if patient.get('emergency_contact') %}
+                                            <p class="text-muted mb-1">
+                                                <i class="fas fa-phone-alt me-1"></i>
+                                                Emergency: {{ patient.get('emergency_contact') }}
+                                            </p>
+                                        {% endif %}
+                                        {% if patient.get('allergies') %}
+                                            <p class="text-danger mb-0">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                Allergies: {{ patient.get('allergies') }}
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <span class="patient-status status-new mb-2 d-inline-block">New</span><br>
+                                <a href="{{ url_for('patient_detail', patient_id=loop.index0) }}" class="btn btn-primary btn-sm me-2">
+                                    <i class="fas fa-eye me-1"></i>View Details
+                                </a>
+                                <form method="POST" action="{{ url_for('delete_patient', patient_id=loop.index0) }}" style="display: inline;">
+                                    <input type="hidden" name="hospital" value="{{ selected_hospital or '' }}">
+                                    <!-- Debug info (remove in production) -->
+                                    <!-- Session role: {{ session.get('user_role') }}, Hospital: {{ selected_hospital }}, Assigned: {{ session.get('assigned_hospital') }} -->
+                                    <button type="submit" class="btn btn-outline-danger btn-sm me-2"
+                                            onclick="return confirm('Are you sure you want to delete {{ patient.firstName }} {{ patient.lastName }}? This action cannot be undone!')"
+                                            title="Delete Patient">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
+                                </form>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="toggleNotes({{ loop.index0 }})">
+                                    <i class="fas fa-sticky-note me-1"></i>Notes
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Collapsible Notes Section -->
+                        <div class="collapse mt-3" id="notes{{ loop.index0 }}">
+                            <div class="bg-light p-3 rounded">
+                                <h6>Doctor's Notes:</h6>
+                                <textarea class="form-control" placeholder="Add notes about this patient..." rows="3"></textarea>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-success">Save Notes</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="toggleNotes({{ loop.index0 }})">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-user-friends fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Patients Found</h4>
+                <p class="text-muted">No patient records have been submitted yet.</p>
+                {% if session.get('user_role') == 'doctor' %}
+                <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+                {% else %}
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleNotes(patientId) {
+            const notesElement = document.getElementById(`notes${patientId}`);
+            const bsCollapse = new bootstrap.Collapse(notesElement);
+        }
+
+        // Search and filter functionality
+        document.getElementById('searchInput').addEventListener('input', filterPatients);
+        document.getElementById('genderFilter').addEventListener('change', filterPatients);
+        document.getElementById('sortBy').addEventListener('change', sortPatients);
+
+        function filterPatients() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const genderFilter = document.getElementById('genderFilter').value.toLowerCase();
+            const patientCards = document.querySelectorAll('.patient-card');
+
+            patientCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const matchesSearch = text.includes(searchTerm);
+                const patientGender = card.querySelector('.card-title').closest('.row').textContent.toLowerCase();
+                const matchesGender = !genderFilter || patientGender.includes(genderFilter);
+
+                if (matchesSearch && matchesGender) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function sortPatients() {
+            const sortBy = document.getElementById('sortBy').value;
+            const container = document.getElementById('patientList');
+            const cards = Array.from(container.children);
+
+            cards.sort((a, b) => {
+                switch (sortBy) {
+                    case 'name':
+                        const nameA = a.querySelector('.card-title').textContent.trim();
+                        const nameB = b.querySelector('.card-title').textContent.trim();
+                        return nameA.localeCompare(nameB);
+                    case 'age':
+                        const ageA = parseInt(a.textContent.match(/Age: (\d+)/)?.[1] || 0);
+                        const ageB = parseInt(b.textContent.match(/Age: (\d+)/)?.[1] || 0);
+                        return ageB - ageA;
+                    case 'oldest':
+                        return parseInt(a.dataset.patientId) - parseInt(b.dataset.patientId);
+                    case 'newest':
+                    default:
+                        return parseInt(b.dataset.patientId) - parseInt(a.dataset.patientId);
+                }
+            });
+
+            cards.forEach(card => container.appendChild(card));
+        }
+
+        // Export functionality
+        {% if session.user_role == 'admin' %}
+            document.getElementById('exportAllBtn').addEventListener('click', function() {
+                window.location.href = '{{ url_for("export_csv") }}';
+            });
+
+            document.getElementById('exportFilteredBtn').addEventListener('click', function() {
+                const genderFilter = document.getElementById('genderFilter').value;
+                const searchTerm = document.getElementById('searchInput').value;
+                
+                let url = '{{ url_for("export_filtered_csv") }}?';
+                
+                if (genderFilter && genderFilter !== 'all') {
+                    url += 'gender=' + genderFilter + '&';
+                }
+                
+                // For simplicity, we'll just export filtered by gender for now
+                // In a real application, you'd implement more sophisticated filtering
+                
+                window.location.href = url;
+            });
+        {% elif session.user_role == 'doctor' %}
+            document.getElementById('exportBasicBtn').addEventListener('click', function() {
+                window.location.href = '{{ url_for("doctor_export_basic") }}';
+            });
+        {% endif %}
+
+        // Advanced export modal functionality (Admin only)
+        {% if session.user_role == 'admin' %}
+            document.getElementById('advancedExportBtn').addEventListener('click', function() {
+                const formData = new FormData(document.getElementById('advancedExportForm'));
+                let url = '{{ url_for("export_filtered_csv") }}?';
+                const params = [];
+                
+                for (let [key, value] of formData.entries()) {
+                    if (value) {
+                        params.push(`${key}=${encodeURIComponent(value)}`);
+                    }
+                }
+                
+                url += params.join('&');
+                window.location.href = url;
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('advancedExportModal')).hide();
+            });
+        {% endif %}
+    </script>
+
+    <!-- Advanced Export Modal (Admin Only) -->
+    {% if session.user_role == 'admin' %}
+    <div class="modal fade" id="advancedExportModal" tabindex="-1" aria-labelledby="advancedExportModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="advancedExportModalLabel">
+                        <i class="fas fa-cog me-2"></i>Advanced Export Options
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="advancedExportForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="exportGender" class="form-label">Gender Filter</label>
+                                    <select class="form-select" id="exportGender" name="gender">
+                                        <option value="">All Genders</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="exportDate" class="form-label">Date Filter</label>
+                                    <input type="month" class="form-control" id="exportDate" name="date" placeholder="YYYY-MM">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="exportAgeMin" class="form-label">Minimum Age</label>
+                                    <input type="number" class="form-control" id="exportAgeMin" name="age_min" min="0" max="120" placeholder="e.g. 18">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="exportAgeMax" class="form-label">Maximum Age</label>
+                                    <input type="number" class="form-control" id="exportAgeMax" name="age_max" min="0" max="120" placeholder="e.g. 65">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Export Information:</strong><br>
+                            • The CSV file will include all patient information<br>
+                            • Filters will be applied to reduce the dataset<br>
+                            • File will be named with current date and filters applied
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="advancedExportBtn">
+                        <i class="fas fa-download me-2"></i>Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>

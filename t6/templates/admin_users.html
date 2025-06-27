@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Admin Panel</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .user-card {
+            transition: transform 0.3s ease;
+        }
+        .user-card:hover {
+            transform: translateY(-2px);
+        }
+        .role-badge {
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-hospital-alt me-2 text-warning"></i>
+                Hospital System - Admin
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                {% if session.user_name %}
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-shield me-1"></i>
+                        Admin {{ session.user_name }}
+                    </span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>
+                            <i class="fas fa-users me-2 text-primary"></i>
+                            User Management
+                        </h2>
+                        <p class="text-muted">Manage all system users - patients, doctors, and administrators</p>
+                    </div>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- User Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-injured fa-2x mb-2"></i>
+                        <h4>{{ users.patients|length }}</h4>
+                        <p class="mb-0">Patients</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-md fa-2x mb-2"></i>
+                        <h4>{{ users.doctors|length }}</h4>
+                        <p class="mb-0">Doctors</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-shield fa-2x mb-2"></i>
+                        <h4>{{ users.admins|length }}</h4>
+                        <p class="mb-0">Administrators</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Lists -->
+        <div class="row">
+            <!-- Patients -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-injured me-2"></i>
+                            Patients
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if users.patients %}
+                            {% for user in users.patients %}
+                            <div class="user-card card mb-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ user.name }}</strong><br>
+                                            <small class="text-muted">{{ user.id }}</small>
+                                        </div>
+                                        <span class="badge bg-success role-badge">{{ user.role }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center">No patients registered</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctors -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-md me-2"></i>
+                            Doctors
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if users.doctors %}
+                            {% for user in users.doctors %}
+                            <div class="user-card card mb-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ user.name }}</strong><br>
+                                            <small class="text-muted">{{ user.id }}</small>
+                                        </div>
+                                        <span class="badge bg-primary role-badge">{{ user.role }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center">No doctors registered</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Administrators -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-shield me-2"></i>
+                            Administrators
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if users.admins %}
+                            {% for user in users.admins %}
+                            <div class="user-card card mb-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ user.name }}</strong><br>
+                                            <small class="text-muted">{{ user.id }}</small>
+                                        </div>
+                                        <span class="badge bg-warning role-badge">{{ user.role }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center">No administrators</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('export_users_csv') }}" class="btn btn-success">
+                        <i class="fas fa-download me-2"></i>Export All Users (CSV)
+                    </a>
+                    <a href="{{ url_for('manage_doctors') }}" class="btn btn-primary">
+                        <i class="fas fa-user-md me-2"></i>Manage Doctors
+                    </a>
+                    <a href="{{ url_for('system_settings') }}" class="btn btn-secondary">
+                        <i class="fas fa-cogs me-2"></i>System Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
