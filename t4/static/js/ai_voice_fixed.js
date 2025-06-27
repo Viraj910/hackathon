@@ -124,14 +124,13 @@ class AIHospitalAssistant {
         console.log('Starting AI Assistant...');
         this.isActive = true;
         this.currentStep = 0;
-        this.conversationContext = {}; // Reset conversation context
         this.updateProgressStep(1);
         
         // Update UI
         document.getElementById('startAssistant').disabled = true;
         document.getElementById('stopAssistant').disabled = false;
         
-        const welcomeMessage = "Hi! I'm your AI Assistant. I'll help you with your registration today. Let's start with your full name.";
+        const welcomeMessage = "Hi! I'm Sarah. I'll help you with your registration today. Let's start with your full name.";
         
         this.addMessage('ai', welcomeMessage);
         this.speak(welcomeMessage, () => {
@@ -337,63 +336,48 @@ class AIHospitalAssistant {
         const lowercaseInput = input.toLowerCase();
         console.log('Extracting data from:', input);
         
-        // Only extract name if we don't have both first and last name yet
-        const currentFirstName = this.getFieldValue('firstName');
-        const currentLastName = this.getFieldValue('lastName');
-        
-        if (!currentFirstName || !currentLastName) {
-            // Extract name information only if we're missing name data
-            const nameMatch = this.extractName(input);
-            if (nameMatch) {
-                console.log('Found name:', nameMatch);
-                if (nameMatch.firstName && !currentFirstName) this.fillField('firstName', nameMatch.firstName);
-                if (nameMatch.lastName && !currentLastName) this.fillField('lastName', nameMatch.lastName);
-            }
+        // Extract name information
+        const nameMatch = this.extractName(input);
+        if (nameMatch) {
+            console.log('Found name:', nameMatch);
+            if (nameMatch.firstName) this.fillField('firstName', nameMatch.firstName);
+            if (nameMatch.lastName) this.fillField('lastName', nameMatch.lastName);
         }
         
-        // Extract age only if we don't have it yet or if we're specifically asking for age
-        const currentAge = this.getFieldValue('age');
-        if (!currentAge || this.conversationContext.lastQuestion === 'age') {
-            const ageMatch = input.match(/\b(\d{1,3})\s*(?:years?\s*old|age)\b/i) || 
-                            input.match(/\bage\s*(?:is\s*)?(\d{1,3})\b/i) ||
-                            input.match(/\bi\s*am\s*(\d{1,3})\b/i) ||
-                            input.match(/(\d{1,3})\s*years?\s*old/i);
-            if (ageMatch) {
-                console.log('Found age:', ageMatch[1]);
-                this.fillField('age', ageMatch[1]);
-            }
+        // Extract age
+        const ageMatch = input.match(/\b(\d{1,3})\s*(?:years?\s*old|age)\b/i) || 
+                        input.match(/\bage\s*(?:is\s*)?(\d{1,3})\b/i) ||
+                        input.match(/\bi\s*am\s*(\d{1,3})\b/i) ||
+                        input.match(/(\d{1,3})\s*years?\s*old/i);
+        if (ageMatch) {
+            console.log('Found age:', ageMatch[1]);
+            this.fillField('age', ageMatch[1]);
         }
         
-        // Extract gender only if we don't have it yet or if we're specifically asking for gender
-        const currentGender = this.getFieldValue('gender');
-        if (!currentGender || this.conversationContext.lastQuestion === 'gender') {
-            if (lowercaseInput.includes('male') && !lowercaseInput.includes('female')) {
-                this.fillSelectField('gender', 'male');
-            } else if (lowercaseInput.includes('female')) {
-                this.fillSelectField('gender', 'female');
-            } else if (lowercaseInput.includes('other') || lowercaseInput.includes('non-binary') || 
-                       lowercaseInput.includes('non binary') || lowercaseInput.includes('prefer not')) {
-                this.fillSelectField('gender', 'other');
-            }
+        // Extract gender - improved detection
+        if (lowercaseInput.includes('male') && !lowercaseInput.includes('female')) {
+            this.fillSelectField('gender', 'male');
+        } else if (lowercaseInput.includes('female')) {
+            this.fillSelectField('gender', 'female');
+        } else if (lowercaseInput.includes('other') || lowercaseInput.includes('non-binary') || 
+                   lowercaseInput.includes('non binary') || lowercaseInput.includes('prefer not')) {
+            this.fillSelectField('gender', 'other');
         }
         
-        // Extract phone number only if we don't have it yet or if we're specifically asking for phone
-        const currentPhone = this.getFieldValue('phone');
-        if (!currentPhone || this.conversationContext.lastQuestion === 'phone') {
-            const phoneMatch = input.match(/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/) ||
-                              input.match(/\b\d{10}\b/) ||
-                              input.match(/\(\d{3}\)\s*\d{3}[-.\s]?\d{4}/) ||
-                              input.match(/\b(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\b/) ||
-                              input.match(/\b(\d{3})\s+(\d{3})\s+(\d{4})\b/);
-            if (phoneMatch) {
-                console.log('Found phone:', phoneMatch[0]);
-                let cleanPhone = phoneMatch[0].replace(/\s+/g, '').replace(/[^\d]/g, '');
-                if (cleanPhone.length === 10) {
-                    // Format as XXX-XXX-XXXX
-                    cleanPhone = cleanPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-                }
-                this.fillField('phone', cleanPhone);
+        // Extract phone number - improved regex patterns for voice input
+        const phoneMatch = input.match(/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/) ||
+                          input.match(/\b\d{10}\b/) ||
+                          input.match(/\(\d{3}\)\s*\d{3}[-.\s]?\d{4}/) ||
+                          input.match(/\b(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\s*(\d)\b/) ||
+                          input.match(/\b(\d{3})\s+(\d{3})\s+(\d{4})\b/);
+        if (phoneMatch) {
+            console.log('Found phone:', phoneMatch[0]);
+            let cleanPhone = phoneMatch[0].replace(/\s+/g, '').replace(/[^\d]/g, '');
+            if (cleanPhone.length === 10) {
+                // Format as XXX-XXX-XXXX
+                cleanPhone = cleanPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
             }
+            this.fillField('phone', cleanPhone);
         }
         
         // Extract email - improved patterns for voice input
@@ -526,13 +510,6 @@ class AIHospitalAssistant {
         const lowercaseInput = userInput.toLowerCase();
         console.log('Handling conversation flow, current step:', this.currentStep);
         
-        // Handle "next field" command - universal skip to next field
-        if (lowercaseInput.includes('next field') || lowercaseInput.includes('skip field') || 
-            lowercaseInput.includes('next question') || lowercaseInput.includes('skip question')) {
-            this.handleNextFieldCommand();
-            return;
-        }
-        
         // Handle skip commands
         if (lowercaseInput.includes('skip phone') || lowercaseInput.includes('skip number')) {
             this.fillField('phone', 'Skipped by user');
@@ -611,7 +588,6 @@ class AIHospitalAssistant {
     askForAge() {
         this.currentStep = 1;
         this.updateProgressStep(2);
-        this.conversationContext.lastQuestion = 'age';
         const firstName = this.getFieldValue('firstName');
         const message = `Perfect, ${firstName}! How old are you?`;
         this.addMessage('ai', message);
@@ -659,15 +635,12 @@ class AIHospitalAssistant {
         
         if (!age) {
             currentAsk = 'age';
-            this.conversationContext.lastQuestion = 'age';
             message = "What's your age?";
         } else if (!gender) {
             currentAsk = 'gender';
-            this.conversationContext.lastQuestion = 'gender';
             message = "What's your gender? Male, female, or other?";
         } else if (!phone) {
             currentAsk = 'phone';
-            this.conversationContext.lastQuestion = 'phone';
             this.conversationContext.askCount.phone = (this.conversationContext.askCount.phone || 0) + 1;
             
             if (this.conversationContext.askCount.phone <= 2) {
@@ -678,7 +651,6 @@ class AIHospitalAssistant {
             }
         } else if (!email) {
             currentAsk = 'email';
-            this.conversationContext.lastQuestion = 'email';
             this.conversationContext.askCount.email = (this.conversationContext.askCount.email || 0) + 1;
             
             if (this.conversationContext.askCount.email <= 2) {
@@ -714,7 +686,6 @@ class AIHospitalAssistant {
     moveToMedicalInfo() {
         this.currentStep = 2;
         this.updateProgressStep(3);
-        this.conversationContext.lastQuestion = null; // Clear context when moving to new section
         
         const message = "Perfect! Now let's discuss your medical information. What symptoms or health concerns brought you to the hospital today?";
         
@@ -1137,136 +1108,6 @@ class AIHospitalAssistant {
             return `${acknowledgment} ${baseMessage}`;
         }
         return baseMessage;
-    }
-    
-    handleNextFieldCommand() {
-        console.log('Next field command received, current step:', this.currentStep);
-        
-        // Determine current field being asked and skip it appropriately
-        switch (this.currentStep) {
-            case 0: // Initial greeting and name
-                if (!this.getFieldValue('firstName')) {
-                    this.fillField('firstName', 'Skipped by user');
-                    this.fillField('lastName', 'Skipped by user');
-                    this.addMessage('ai', "I'll skip the name for now. Let's move on to your age.");
-                    setTimeout(() => this.askForAge(), 1000);
-                } else {
-                    this.addMessage('ai', "We've already got your name. Let me continue with the next question.");
-                    setTimeout(() => this.askForAge(), 1000);
-                }
-                break;
-                
-            case 1: // Personal information
-                const currentField = this.getCurrentPersonalField();
-                if (currentField) {
-                    this.skipCurrentPersonalField(currentField);
-                } else {
-                    this.addMessage('ai', "Let's move on to the medical information section.");
-                    setTimeout(() => this.moveToMedicalInfo(), 1000);
-                }
-                break;
-                
-            case 2: // Medical information
-                this.skipCurrentMedicalField();
-                break;
-                
-            case 3: // Emergency contact
-                this.skipCurrentEmergencyField();
-                break;
-                
-            case 4: // Confirmation
-                this.addMessage('ai', "I'll proceed with the form submission. Please review the information and click the submit button when ready.");
-                break;
-                
-            default:
-                this.addMessage('ai', "I'll skip to the next section.");
-                break;
-        }
-    }
-    
-    getCurrentPersonalField() {
-        // Return the current field being asked for in personal info step
-        if (!this.getFieldValue('age')) return 'age';
-        if (!this.getFieldValue('gender')) return 'gender';
-        if (!this.getFieldValue('phone')) return 'phone';
-        if (!this.getFieldValue('email')) return 'email';
-        if (!this.getFieldValue('address')) return 'address';
-        return null;
-    }
-    
-    skipCurrentPersonalField(fieldName) {
-        const fieldMessages = {
-            'age': "I'll skip the age for now.",
-            'gender': "I'll skip the gender information.",
-            'phone': "No problem, I'll skip the phone number.",
-            'email': "I'll skip the email for now.",
-            'address': "I'll skip the address information."
-        };
-        
-        this.fillField(fieldName, 'Skipped by user');
-        const message = fieldMessages[fieldName] || "I'll skip this field.";
-        this.addMessage('ai', message + " Let's continue.");
-        
-        setTimeout(() => this.askForMissingPersonalInfo(), 1000);
-    }
-    
-    skipCurrentMedicalField() {
-        const medicalStep = this.conversationContext.medicalStep || 0;
-        const fieldMessages = [
-            { field: 'symptoms', message: "I'll skip the symptoms for now." },
-            { field: 'allergies', message: "I'll skip the allergy information." },
-            { field: 'medications', message: "I'll skip the medication information." },
-            { field: 'medicalHistory', message: "I'll skip the medical history." }
-        ];
-        
-        if (medicalStep < fieldMessages.length) {
-            const currentField = fieldMessages[medicalStep];
-            this.fillField(currentField.field, 'Skipped by user');
-            this.addMessage('ai', currentField.message + " Let's continue.");
-            
-            this.conversationContext.medicalStep = medicalStep + 1;
-            
-            // Continue with next medical field or move to emergency contact
-            if (this.conversationContext.medicalStep >= fieldMessages.length) {
-                setTimeout(() => this.moveToEmergencyContact(), 1000);
-            } else {
-                setTimeout(() => this.handleMedicalInfo(''), 1000);
-            }
-        } else {
-            this.addMessage('ai', "Let's move on to emergency contact information.");
-            setTimeout(() => this.moveToEmergencyContact(), 1000);
-        }
-    }
-    
-    skipCurrentEmergencyField() {
-        const emergencyStep = this.conversationContext.emergencyStep || 0;
-        
-        switch (emergencyStep) {
-            case 0: // Skip emergency name
-                this.fillField('emergencyName', 'Skipped by user');
-                this.addMessage('ai', "I'll skip the emergency contact name.");
-                this.conversationContext.emergencyStep = 1;
-                setTimeout(() => this.handleEmergencyContact(''), 1000);
-                break;
-                
-            case 1: // Skip emergency phone
-                this.fillField('emergencyPhone', 'Skipped by user');
-                this.addMessage('ai', "I'll skip the emergency contact phone number.");
-                this.conversationContext.emergencyStep = 2;
-                setTimeout(() => this.handleEmergencyContact(''), 1000);
-                break;
-                
-            case 2: // Skip emergency relationship
-                this.fillField('emergencyRelation', 'Skipped by user');
-                this.addMessage('ai', "I'll skip the relationship information and move to confirmation.");
-                setTimeout(() => this.moveToConfirmation(), 1000);
-                break;
-                
-            default:
-                this.addMessage('ai', "Let's move on to the final confirmation.");
-                setTimeout(() => this.moveToConfirmation(), 1000);
-                break;
-        }
     }
 }
 
