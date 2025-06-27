@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Hospital Management System</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .admin-header {
+            background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: none;
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .admin-action-btn {
+            padding: 1rem;
+            border-radius: 15px;
+            border: none;
+            font-weight: 600;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .admin-action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .chart-card {
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-hospital-alt me-2 text-warning"></i>
+                Hospital System - Admin
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                {% if session.user_name %}
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-shield me-1"></i>
+                        Admin {{ session.user_name }}
+                    </span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div style="margin-top: 76px;"></div>
+
+    <!-- Admin Header -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="fas fa-tachometer-alt me-3"></i>
+                        System Administration
+                    </h1>
+                    <p class="mb-0 opacity-75">Complete hospital management system control</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="text-white">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <span id="currentDate"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="container">
+        <!-- System Overview -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number text-primary">{{ stats.total_patients }}</div>
+                            <div class="text-muted">Total Patients</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-user-md fa-2x text-success"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number text-success">{{ stats.total_doctors }}</div>
+                            <div class="text-muted">Active Doctors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-user-shield fa-2x text-warning"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number text-warning">{{ stats.total_admins }}</div>
+                            <div class="text-muted">System Admins</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-chart-line fa-2x text-info"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number text-info">{{ stats.recent_patients }}</div>
+                            <div class="text-muted">Recent (7 days)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card text-center">
+                    <i class="fas fa-users-cog fa-3x text-primary mb-3"></i>
+                    <h5>User Management</h5>
+                    <p class="text-muted mb-3">Manage patients, doctors, and admins</p>
+                    <a href="{{ url_for('manage_users') }}" class="admin-action-btn btn btn-primary">
+                        <i class="fas fa-users me-2"></i>Manage Users
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card text-center">
+                    <i class="fas fa-user-md fa-3x text-success mb-3"></i>
+                    <h5>Doctor Management</h5>
+                    <p class="text-muted mb-3">View and manage doctor accounts</p>
+                    <a href="{{ url_for('manage_doctors') }}" class="admin-action-btn btn btn-success">
+                        <i class="fas fa-stethoscope me-2"></i>Manage Doctors
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card text-center">
+                    <i class="fas fa-database fa-3x text-info mb-3"></i>
+                    <h5>Patient Records</h5>
+                    <p class="text-muted mb-3">Full access to patient database</p>
+                    <a href="{{ url_for('patient_management') }}" class="admin-action-btn btn btn-info">
+                        <i class="fas fa-file-medical me-2"></i>View Records
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card text-center">
+                    <i class="fas fa-chart-bar fa-3x text-warning mb-3"></i>
+                    <h5>Advanced Reports</h5>
+                    <p class="text-muted mb-3">Comprehensive system analytics</p>
+                    <a href="{{ url_for('admin_reports') }}" class="admin-action-btn btn btn-warning">
+                        <i class="fas fa-analytics me-2"></i>View Reports
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card text-center">
+                    <i class="fas fa-cogs fa-3x text-secondary mb-3"></i>
+                    <h5>System Settings</h5>
+                    <p class="text-muted mb-3">Configure system parameters</p>
+                    <a href="{{ url_for('system_settings') }}" class="admin-action-btn btn btn-secondary">
+                        <i class="fas fa-wrench me-2"></i>Settings
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card text-center">
+                    <i class="fas fa-download fa-3x text-danger mb-3"></i>
+                    <h5>Data Export</h5>
+                    <p class="text-muted mb-3">Export system data and reports</p>
+                    <button class="admin-action-btn btn btn-danger dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-file-export me-2"></i>Export Data
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('export_csv') }}">
+                            <i class="fas fa-file-csv me-2"></i>All Patient Data (CSV)
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('export_doctors_csv') }}">
+                            <i class="fas fa-user-md me-2"></i>Doctors Data (CSV)
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('export_users_csv') }}">
+                            <i class="fas fa-users me-2"></i>All Users Data (CSV)
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('export_filtered_csv') }}">
+                            <i class="fas fa-filter me-2"></i>Custom Export
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demographics Overview -->
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <div class="card chart-card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-venus-mars me-2"></i>
+                            Gender Distribution
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-number text-primary">{{ stats.male_patients }}</div>
+                                <div class="text-muted">Male Patients</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-number text-danger">{{ stats.female_patients }}</div>
+                                <div class="text-muted">Female Patients</div>
+                            </div>
+                        </div>
+                        <div class="progress mt-3" style="height: 10px;">
+                            {% set total_gender = stats.male_patients + stats.female_patients %}
+                            {% if total_gender > 0 %}
+                                <div class="progress-bar bg-primary" style="width: {{ (stats.male_patients / total_gender * 100)|round(1) }}%"></div>
+                                <div class="progress-bar bg-danger" style="width: {{ (stats.female_patients / total_gender * 100)|round(1) }}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card chart-card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-birthday-cake me-2"></i>
+                            Age Distribution
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="stat-number text-success">{{ stats.age_groups['0-18'] }}</div>
+                                <small class="text-muted">0-18</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="stat-number text-info">{{ stats.age_groups['19-35'] }}</div>
+                                <small class="text-muted">19-35</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="stat-number text-warning">{{ stats.age_groups['36-60'] }}</div>
+                                <small class="text-muted">36-60</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="stat-number text-danger">{{ stats.age_groups['60+'] }}</div>
+                                <small class="text-muted">60+</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Patients -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            Recent Patient Registrations
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if patients %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Age</th>
+                                            <th>Gender</th>
+                                            <th>Registration Date</th>
+                                            <th>Symptoms</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for patient in patients %}
+                                        <tr>
+                                            <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                                            <td>{{ patient.age or 'N/A' }}</td>
+                                            <td>{{ patient.gender or 'N/A' }}</td>
+                                            <td>{{ patient.timestamp }}</td>
+                                            <td>{{ patient.symptoms[:50] + '...' if patient.symptoms and patient.symptoms|length > 50 else patient.symptoms or 'N/A' }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('patient_management') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye me-2"></i>View All Patients
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-user-plus fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No patient registrations yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update current date
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>

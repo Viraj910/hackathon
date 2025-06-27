@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Reports - Hospital Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .page-header {
+            background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: none;
+            transition: transform 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .export-btn {
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('doctor_dashboard') }}">
+                <i class="fas fa-hospital-alt me-2 text-primary"></i>
+                Hospital System
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                {% if session.user_name %}
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-md me-1"></i>
+                        Dr. {{ session.user_name }}
+                    </span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div style="margin-top: 76px;"></div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="fas fa-chart-bar me-3"></i>
+                        Medical Reports & Analytics
+                    </h1>
+                    <p class="mb-0 opacity-75">Comprehensive patient data analysis and statistics</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Key Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-primary">{{ stats.total_patients }}</div>
+                    <h6 class="text-muted mb-0">Total Patients</h6>
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up me-1"></i>
+                        All time records
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-success">{{ stats.recent_submissions }}</div>
+                    <h6 class="text-muted mb-0">This Month</h6>
+                    <small class="text-info">
+                        <i class="fas fa-calendar me-1"></i>
+                        Recent submissions
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-warning">{{ stats.gender_stats.get('male', 0) }}</div>
+                    <h6 class="text-muted mb-0">Male Patients</h6>
+                    <small class="text-primary">
+                        <i class="fas fa-mars me-1"></i>
+                        {{ "%.1f"|format((stats.gender_stats.get('male', 0) / stats.total_patients * 100) if stats.total_patients else 0) }}%
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-info">{{ stats.gender_stats.get('female', 0) }}</div>
+                    <h6 class="text-muted mb-0">Female Patients</h6>
+                    <small class="text-danger">
+                        <i class="fas fa-venus me-1"></i>
+                        {{ "%.1f"|format((stats.gender_stats.get('female', 0) / stats.total_patients * 100) if stats.total_patients else 0) }}%
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Gender Distribution
+                    </h5>
+                    <canvas id="genderChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Age Groups
+                    </h5>
+                    <canvas id="ageChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Common Conditions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="chart-container">
+                    <div class="row align-items-center mb-3">
+                        <div class="col">
+                            <h5 class="mb-0">
+                                <i class="fas fa-stethoscope me-2"></i>
+                                Common Medical Conditions
+                            </h5>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-outline-primary export-btn" onclick="exportReport()">
+                                <i class="fas fa-download me-2"></i>Export Report
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if patients %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Patient Name</th>
+                                        <th>Age</th>
+                                        <th>Gender</th>
+                                        <th>Symptoms</th>
+                                        <th>Allergies</th>
+                                        <th>Medications</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for patient in patients[:10] %}
+                                    <tr>
+                                        <td>{{ patient.get('firstName', '') }} {{ patient.get('lastName', '') }}</td>
+                                        <td>{{ patient.get('age', 'N/A') }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'primary' if patient.get('gender') == 'male' else 'danger' if patient.get('gender') == 'female' else 'secondary' }}">
+                                                {{ patient.get('gender', 'N/A')|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ patient.get('symptoms', 'None reported')[:50] }}{% if patient.get('symptoms', '')|length > 50 %}...{% endif %}</td>
+                                        <td>
+                                            {% if patient.get('allergies') %}
+                                                <span class="text-danger">{{ patient.get('allergies') }}</span>
+                                            {% else %}
+                                                <span class="text-muted">None</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ patient.get('medications', 'None') }}</td>
+                                        <td>{{ patient.get('timestamp', 'N/A')[:10] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if patients|length > 10 %}
+                            <div class="text-center">
+                                <a href="{{ url_for('patient_management') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye me-2"></i>View All {{ patients|length }} Patients
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Data Available</h5>
+                            <p class="text-muted">No patient data available for analysis.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                        <h6>Patient Management</h6>
+                        <p class="text-muted small">Manage patient records</p>
+                        <a href="{{ url_for('patient_management') }}" class="btn btn-sm btn-primary">Go to Patients</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-medical fa-2x text-success mb-3"></i>
+                        <h6>View Submissions</h6>
+                        <p class="text-muted small">Review form submissions</p>
+                        <a href="{{ url_for('view_submissions') }}" class="btn btn-sm btn-success">View Forms</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-cog fa-2x text-info mb-3"></i>
+                        <h6>System Settings</h6>
+                        <p class="text-muted small">Configure system</p>
+                        <a href="{{ url_for('settings') }}" class="btn btn-sm btn-info">Settings</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Gender Distribution Chart
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
+        new Chart(genderCtx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    {% for gender, count in stats.gender_stats.items() %}
+                        '{{ gender|title }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for gender, count in stats.gender_stats.items() %}
+                            {{ count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        '#007bff',
+                        '#dc3545',
+                        '#28a745',
+                        '#ffc107',
+                        '#6c757d'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Age Groups Chart
+        const ageCtx = document.getElementById('ageChart').getContext('2d');
+        new Chart(ageCtx, {
+            type: 'bar',
+            data: {
+                labels: ['0-18', '19-35', '36-60', '60+'],
+                datasets: [{
+                    label: 'Number of Patients',
+                    data: [
+                        {{ stats.age_groups['0-18'] }},
+                        {{ stats.age_groups['19-35'] }},
+                        {{ stats.age_groups['36-60'] }},
+                        {{ stats.age_groups['60+'] }}
+                    ],
+                    backgroundColor: [
+                        '#28a745',
+                        '#007bff',
+                        '#ffc107',
+                        '#dc3545'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function exportReport() {
+            // Simple CSV export
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Name,Age,Gender,Phone,Symptoms,Allergies,Medications,Date\n";
+            
+            {% for patient in patients %}
+                csvContent += '"{{ patient.get('firstName', '') }} {{ patient.get('lastName', '') }}",';
+                csvContent += '"{{ patient.get('age', '') }}",';
+                csvContent += '"{{ patient.get('gender', '') }}",';
+                csvContent += '"{{ patient.get('phone', '') }}",';
+                csvContent += '"{{ patient.get('symptoms', '') }}",';
+                csvContent += '"{{ patient.get('allergies', '') }}",';
+                csvContent += '"{{ patient.get('medications', '') }}",';
+                csvContent += '"{{ patient.get('timestamp', '') }}"\n';
+            {% endfor %}
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "medical_report_" + new Date().toISOString().split('T')[0] + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
