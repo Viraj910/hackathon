@@ -526,6 +526,13 @@ class AIHospitalAssistant {
         const lowercaseInput = userInput.toLowerCase();
         console.log('Handling conversation flow, current step:', this.currentStep);
         
+        // Handle "next field" command - universal skip to next field
+        if (lowercaseInput.includes('next field') || lowercaseInput.includes('skip field') || 
+            lowercaseInput.includes('next question') || lowercaseInput.includes('skip question')) {
+            this.handleNextFieldCommand();
+            return;
+        }
+        
         // Handle skip commands
         if (lowercaseInput.includes('skip phone') || lowercaseInput.includes('skip number')) {
             this.fillField('phone', 'Skipped by user');
@@ -1130,6 +1137,136 @@ class AIHospitalAssistant {
             return `${acknowledgment} ${baseMessage}`;
         }
         return baseMessage;
+    }
+    
+    handleNextFieldCommand() {
+        console.log('Next field command received, current step:', this.currentStep);
+        
+        // Determine current field being asked and skip it appropriately
+        switch (this.currentStep) {
+            case 0: // Initial greeting and name
+                if (!this.getFieldValue('firstName')) {
+                    this.fillField('firstName', 'Skipped by user');
+                    this.fillField('lastName', 'Skipped by user');
+                    this.addMessage('ai', "I'll skip the name for now. Let's move on to your age.");
+                    setTimeout(() => this.askForAge(), 1000);
+                } else {
+                    this.addMessage('ai', "We've already got your name. Let me continue with the next question.");
+                    setTimeout(() => this.askForAge(), 1000);
+                }
+                break;
+                
+            case 1: // Personal information
+                const currentField = this.getCurrentPersonalField();
+                if (currentField) {
+                    this.skipCurrentPersonalField(currentField);
+                } else {
+                    this.addMessage('ai', "Let's move on to the medical information section.");
+                    setTimeout(() => this.moveToMedicalInfo(), 1000);
+                }
+                break;
+                
+            case 2: // Medical information
+                this.skipCurrentMedicalField();
+                break;
+                
+            case 3: // Emergency contact
+                this.skipCurrentEmergencyField();
+                break;
+                
+            case 4: // Confirmation
+                this.addMessage('ai', "I'll proceed with the form submission. Please review the information and click the submit button when ready.");
+                break;
+                
+            default:
+                this.addMessage('ai', "I'll skip to the next section.");
+                break;
+        }
+    }
+    
+    getCurrentPersonalField() {
+        // Return the current field being asked for in personal info step
+        if (!this.getFieldValue('age')) return 'age';
+        if (!this.getFieldValue('gender')) return 'gender';
+        if (!this.getFieldValue('phone')) return 'phone';
+        if (!this.getFieldValue('email')) return 'email';
+        if (!this.getFieldValue('address')) return 'address';
+        return null;
+    }
+    
+    skipCurrentPersonalField(fieldName) {
+        const fieldMessages = {
+            'age': "I'll skip the age for now.",
+            'gender': "I'll skip the gender information.",
+            'phone': "No problem, I'll skip the phone number.",
+            'email': "I'll skip the email for now.",
+            'address': "I'll skip the address information."
+        };
+        
+        this.fillField(fieldName, 'Skipped by user');
+        const message = fieldMessages[fieldName] || "I'll skip this field.";
+        this.addMessage('ai', message + " Let's continue.");
+        
+        setTimeout(() => this.askForMissingPersonalInfo(), 1000);
+    }
+    
+    skipCurrentMedicalField() {
+        const medicalStep = this.conversationContext.medicalStep || 0;
+        const fieldMessages = [
+            { field: 'symptoms', message: "I'll skip the symptoms for now." },
+            { field: 'allergies', message: "I'll skip the allergy information." },
+            { field: 'medications', message: "I'll skip the medication information." },
+            { field: 'medicalHistory', message: "I'll skip the medical history." }
+        ];
+        
+        if (medicalStep < fieldMessages.length) {
+            const currentField = fieldMessages[medicalStep];
+            this.fillField(currentField.field, 'Skipped by user');
+            this.addMessage('ai', currentField.message + " Let's continue.");
+            
+            this.conversationContext.medicalStep = medicalStep + 1;
+            
+            // Continue with next medical field or move to emergency contact
+            if (this.conversationContext.medicalStep >= fieldMessages.length) {
+                setTimeout(() => this.moveToEmergencyContact(), 1000);
+            } else {
+                setTimeout(() => this.handleMedicalInfo(''), 1000);
+            }
+        } else {
+            this.addMessage('ai', "Let's move on to emergency contact information.");
+            setTimeout(() => this.moveToEmergencyContact(), 1000);
+        }
+    }
+    
+    skipCurrentEmergencyField() {
+        const emergencyStep = this.conversationContext.emergencyStep || 0;
+        
+        switch (emergencyStep) {
+            case 0: // Skip emergency name
+                this.fillField('emergencyName', 'Skipped by user');
+                this.addMessage('ai', "I'll skip the emergency contact name.");
+                this.conversationContext.emergencyStep = 1;
+                setTimeout(() => this.handleEmergencyContact(''), 1000);
+                break;
+                
+            case 1: // Skip emergency phone
+                this.fillField('emergencyPhone', 'Skipped by user');
+                this.addMessage('ai', "I'll skip the emergency contact phone number.");
+                this.conversationContext.emergencyStep = 2;
+                setTimeout(() => this.handleEmergencyContact(''), 1000);
+                break;
+                
+            case 2: // Skip emergency relationship
+                this.fillField('emergencyRelation', 'Skipped by user');
+                this.addMessage('ai', "I'll skip the relationship information and move to confirmation.");
+                setTimeout(() => this.moveToConfirmation(), 1000);
+                break;
+                
+            default:
+                this.addMessage('ai', "Let's move on to the final confirmation.");
+                setTimeout(() => this.moveToConfirmation(), 1000);
+                break;
+        }
     }
 }
 

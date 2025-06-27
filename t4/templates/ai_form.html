@@ -120,9 +120,55 @@
             margin: 0 auto 10px;
             font-weight: bold;
         }
+        .navbar-custom {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background: white;
+            color: #4facfe;
+        }
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-hospital me-2"></i>MediCare - Patient Portal
+            </a>
+            <div class="navbar-nav ms-auto d-flex align-items-center">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user me-2"></i>Welcome, {{ session.username }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn logout-btn">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container-fluid mt-2">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     <div class="container-fluid">
         <div class="row min-vh-100">
             <!-- Left side - AI Assistant Interface -->
@@ -195,6 +241,16 @@
                         <p class="text-muted">This form will be automatically filled as you speak with the AI Assistant</p>
                     </div>
                     
+                    <!-- Voice Commands Help -->
+                    <div class="alert alert-info mb-4">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Voice Commands:</h6>
+                        <ul class="mb-0 small">
+                            <li>Say <strong>"next field"</strong> to skip to the next question</li>
+                            <li>Say <strong>"skip phone"</strong>, <strong>"skip email"</strong>, or <strong>"skip address"</strong> to skip specific fields</li>
+                            <li>Speak naturally - the AI will understand you!</li>
+                        </ul>
+                    </div>
+                    
                     <form method="POST" id="patientForm" class="needs-validation" novalidate>
                         <!-- Personal Information -->
                         <div class="card mb-4">
@@ -205,13 +261,13 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="firstName" class="form-label">First Name *</label>
-                                        <input type="text" class="form-control" id="firstName" name="firstName" required readonly>
+                                        <input type="text" class="form-control" id="firstName" name="firstName" required>
                                         <div class="invalid-feedback">Please provide your first name.</div>
                                     </div>
                                     
                                     <div class="col-md-6 mb-3">
                                         <label for="lastName" class="form-label">Last Name *</label>
-                                        <input type="text" class="form-control" id="lastName" name="lastName" required readonly>
+                                        <input type="text" class="form-control" id="lastName" name="lastName" required>
                                         <div class="invalid-feedback">Please provide your last name.</div>
                                     </div>
                                 </div>
@@ -219,13 +275,13 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="age" class="form-label">Age *</label>
-                                        <input type="number" class="form-control" id="age" name="age" min="1" max="120" required readonly>
+                                        <input type="number" class="form-control" id="age" name="age" min="1" max="120" required>
                                         <div class="invalid-feedback">Please provide a valid age.</div>
                                     </div>
                                     
                                     <div class="col-md-6 mb-3">
                                         <label for="gender" class="form-label">Gender *</label>
-                                        <select class="form-select" id="gender" name="gender" required disabled>
+                                        <select class="form-select" id="gender" name="gender" required>
                                             <option value="">Select Gender</option>
                                             <option value="male">Male</option>
                                             <option value="female">Female</option>
@@ -237,18 +293,18 @@
                                 
                                 <div class="mb-3">
                                     <label for="phone" class="form-label">Phone Number *</label>
-                                    <input type="tel" class="form-control" id="phone" name="phone" required readonly>
+                                    <input type="tel" class="form-control" id="phone" name="phone" required>
                                     <div class="invalid-feedback">Please provide a valid phone number.</div>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="email" class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" id="email" name="email" readonly>
+                                    <input type="email" class="form-control" id="email" name="email">
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="address" class="form-label">Address</label>
-                                    <textarea class="form-control" id="address" name="address" rows="2" readonly></textarea>
+                                    <textarea class="form-control" id="address" name="address" rows="2"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -261,22 +317,22 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label for="symptoms" class="form-label">Primary Symptoms</label>
-                                    <textarea class="form-control" id="symptoms" name="symptoms" rows="3" readonly></textarea>
+                                    <textarea class="form-control" id="symptoms" name="symptoms" rows="3"></textarea>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="allergies" class="form-label">Known Allergies</label>
-                                    <input type="text" class="form-control" id="allergies" name="allergies" readonly>
+                                    <input type="text" class="form-control" id="allergies" name="allergies">
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="medications" class="form-label">Current Medications</label>
-                                    <input type="text" class="form-control" id="medications" name="medications" readonly>
+                                    <input type="text" class="form-control" id="medications" name="medications">
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="medicalHistory" class="form-label">Previous Medical History</label>
-                                    <textarea class="form-control" id="medicalHistory" name="medicalHistory" rows="2" readonly></textarea>
+                                    <textarea class="form-control" id="medicalHistory" name="medicalHistory" rows="2"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -290,18 +346,18 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="emergencyName" class="form-label">Contact Name</label>
-                                        <input type="text" class="form-control" id="emergencyName" name="emergencyName" readonly>
+                                        <input type="text" class="form-control" id="emergencyName" name="emergencyName">
                                     </div>
                                     
                                     <div class="col-md-6 mb-3">
                                         <label for="emergencyPhone" class="form-label">Contact Phone</label>
-                                        <input type="tel" class="form-control" id="emergencyPhone" name="emergencyPhone" readonly>
+                                        <input type="tel" class="form-control" id="emergencyPhone" name="emergencyPhone">
                                     </div>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="emergencyRelation" class="form-label">Relationship</label>
-                                    <input type="text" class="form-control" id="emergencyRelation" name="emergencyRelation" readonly>
+                                    <input type="text" class="form-control" id="emergencyRelation" name="emergencyRelation">
                                 </div>
                             </div>
                         </div>

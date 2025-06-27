@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - MediCare Hospital</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .dashboard-header {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            color: inherit;
+            text-decoration: none;
+        }
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .icon-patients { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .icon-doctors { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .icon-submissions { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .icon-profiles { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        .card-description {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .welcome-section h1 {
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .welcome-section p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        .logout-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #d63031 100%);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-hospital me-2"></i>MediCare Hospital
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user-md me-2"></i>Welcome, Dr. {{ username }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn logout-btn">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="dashboard-header">
+            <div class="welcome-section">
+                <h1><i class="fas fa-tachometer-alt me-3"></i>Doctor Dashboard</h1>
+                <p>Manage your medical practice and patient information</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('view_submissions') }}" class="dashboard-card">
+                    <div class="card-icon icon-submissions">
+                        <i class="fas fa-file-medical-alt"></i>
+                    </div>
+                    <div class="card-title">Patient Submissions</div>
+                    <div class="card-description">
+                        View all patient form submissions and registrations
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('doctor_admin') }}" class="dashboard-card">
+                    <div class="card-icon icon-doctors">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <div class="card-title">Doctor Admin</div>
+                    <div class="card-description">
+                        Manage doctor profiles and information
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('public_doctors') }}" class="dashboard-card">
+                    <div class="card-icon icon-profiles">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="card-title">Doctor Profiles</div>
+                    <div class="card-description">
+                        View public doctor profiles and information
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('add_doctor') }}" class="dashboard-card">
+                    <div class="card-icon icon-patients">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="card-title">Add New Doctor</div>
+                    <div class="card-description">
+                        Add new doctor profiles to the system
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 class="mb-2"><i class="fas fa-info-circle me-2"></i>Quick Access</h3>
+                            <p class="mb-0">Use the cards above to navigate to different sections of the medical administration system. You can manage patient records, doctor profiles, and view all form submissions.</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="card-icon icon-doctors mx-auto">
+                                <i class="fas fa-stethoscope"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
