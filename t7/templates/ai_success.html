@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Successful - AI Hospital Assistant</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .success-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 800px;
+        }
+        .success-icon {
+            font-size: 4rem;
+            color: #28a745;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-30px); }
+            60% { transform: translateY(-15px); }
+        }
+        .patient-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="success-card">
+                        <div class="text-center p-5">
+                            <div class="ai-badge">
+                                <i class="fas fa-robot me-2"></i>AI-Powered Registration Complete
+                            </div>
+                            
+                            <i class="fas fa-check-circle success-icon mb-4"></i>
+                            <h1 class="display-5 fw-bold text-success mb-3">Registration Successful!</h1>
+                            <p class="lead text-muted mb-4">
+                                Thank you for using our AI-powered registration system, Dr. AI has successfully processed your information.
+                            </p>
+                            
+                            <!-- Patient Information Summary -->
+                            <div class="patient-info p-4 text-start">
+                                <h5 class="fw-bold mb-3">
+                                    <i class="fas fa-user me-2"></i>Registration Summary
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {% if data.get('firstName') or data.get('lastName') %}
+                                        <p><strong>Patient Name:</strong> {{ data.get('firstName', '') }} {{ data.get('lastName', '') }}</p>
+                                        {% elif data.get('name') %}
+                                        <p><strong>Patient Name:</strong> {{ data.get('name', '') }}</p>
+                                        {% endif %}
+                                        
+                                        {% if data.get('age') %}
+                                        <p><strong>Age:</strong> {{ data.get('age', 'N/A') }} years</p>
+                                        {% endif %}
+                                        
+                                        {% if data.get('gender') %}
+                                        <p><strong>Gender:</strong> {{ data.get('gender', 'N/A')|title }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% if data.get('phone') %}
+                                        <p><strong>Phone:</strong> {{ data.get('phone', 'N/A') }}</p>
+                                        {% endif %}
+                                        
+                                        {% if data.get('email') %}
+                                        <p><strong>Email:</strong> {{ data.get('email') }}</p>
+                                        {% endif %}
+                                        
+                                        <p><strong>Registration Time:</strong> {{ data.get('timestamp', 'N/A') }}</p>
+                                    </div>
+                                </div>
+                                
+                                {% if data.get('symptoms') %}
+                                <div class="mt-3">
+                                    <p><strong>Primary Symptoms:</strong> {{ data.get('symptoms') }}</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if data.get('allergies') %}
+                                <div class="mt-2">
+                                    <p><strong>Allergies:</strong> {{ data.get('allergies') }}</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if data.get('medications') %}
+                                <div class="mt-2">
+                                    <p><strong>Current Medications:</strong> {{ data.get('medications') }}</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if data.get('emergencyName') %}
+                                <div class="mt-3 pt-3 border-top">
+                                    <p><strong>Emergency Contact:</strong> {{ data.get('emergencyName') }}
+                                    {% if data.get('emergencyPhone') %} - {{ data.get('emergencyPhone') }}{% endif %}
+                                    {% if data.get('emergencyRelation') %} ({{ data.get('emergencyRelation') }}){% endif %}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Token and Appointment Information -->
+                            {% if data.get('token_number') %}
+                            <div class="alert alert-success text-start">
+                                <h5 class="fw-bold mb-3">
+                                    <i class="fas fa-ticket-alt me-2"></i>Your Appointment Details
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card bg-primary text-white mb-3">
+                                            <div class="card-body text-center">
+                                                <h2 class="card-title mb-0">{{ data.get('token_number') }}</h2>
+                                                <p class="card-text mb-0">Token Number</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card bg-info text-white mb-3">
+                                            <div class="card-body text-center">
+                                                <h4 class="card-title mb-0">{{ data.get('time_range') }}</h4>
+                                                <p class="card-text mb-0">Appointment Slot</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row text-center">
+                                    <div class="col-md-4">
+                                        <p><strong>Slot Number:</strong> {{ data.get('slot_number') }}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p><strong>Position in Slot:</strong> {{ data.get('position_in_slot') }}/60</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p><strong>Estimated Wait:</strong> {{ data.get('estimated_wait_time') }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-3">
+                                    <p class="text-muted mb-0">
+                                        <i class="fas fa-hospital me-2"></i>Hospital: <strong>{{ data.get('selected_hospital') }}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Next Steps -->
+                            <div class="alert alert-info text-start">
+                                <h6 class="fw-bold">
+                                    <i class="fas fa-info-circle me-2"></i>Next Steps:
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>Please take a seat in the waiting area</li>
+                                    <li>Your token number will be called when it's your turn</li>
+                                    <li>Please arrive at least 15 minutes before your scheduled time slot</li>
+                                    <li>Have your ID and insurance card ready</li>
+                                    {% if data.get('estimated_wait_time') %}
+                                    <li>Estimated wait time: {{ data.get('estimated_wait_time') }}</li>
+                                    {% else %}
+                                    <li>Estimated wait time: 15-30 minutes</li>
+                                    {% endif %}
+                                    <li>If you have urgent symptoms, please notify our staff immediately</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Feedback -->
+                            <div class="alert alert-light border">
+                                <h6 class="fw-bold">
+                                    <i class="fas fa-star me-2"></i>How was your AI registration experience?
+                                </h6>
+                                <p class="mb-2">Your feedback helps us improve our AI assistant:</p>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-thumbs-up me-1"></i>Excellent
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-smile me-1"></i>Good
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm">
+                                        <i class="fas fa-meh me-1"></i>Okay
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-thumbs-down me-1"></i>Needs Improvement
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                                <a href="{{ url_for('patient_form') }}" class="btn btn-primary btn-lg me-md-2">
+                                    <i class="fas fa-plus me-2"></i>New Registration
+                                </a>
+                                <a href="{{ url_for('legacy_form') }}" class="btn btn-outline-secondary btn-lg me-md-2">
+                                    <i class="fas fa-keyboard me-2"></i>Manual Form
+                                </a>
+                                <a href="{{ url_for('login_choice') }}" class="btn btn-outline-info btn-lg">
+                                    <i class="fas fa-home me-2"></i>Go to Login Choice
+                                </a>
+                            </div>
+                            
+                            <!-- Hospital Contact Info -->
+                            <div class="mt-5 pt-4 border-top">
+                                <div class="row text-center">
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold">City General Hospital</h6>
+                                        <p class="text-muted small mb-0">
+                                            <i class="fas fa-map-marker-alt me-2"></i>123 Medical Center Drive<br>
+                                            Healthcare City, HC 12345
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold">Emergency & Contact</h6>
+                                        <p class="text-muted small mb-0">
+                                            <i class="fas fa-phone me-2"></i>Emergency: 911<br>
+                                            <i class="fas fa-phone me-2"></i>Main: (555) 123-4567<br>
+                                            <i class="fas fa-envelope me-2"></i>info@citygeneralhospital.com
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Auto-speak success message with AI voice -->
+    <script>
+        window.addEventListener('load', function() {
+            if ('speechSynthesis' in window) {
+                // Wait for voices to load
+                const initSpeech = () => {
+                    const voices = speechSynthesis.getVoices();
+                    
+                    {% if data.get('firstName') %}
+                        const patientName = "{{ data.get('firstName', 'Patient') }}";
+                    {% elif data.get('name') %}
+                        const patientName = "{{ data.get('name', 'Patient').split(' ')[0] }}";
+                    {% else %}
+                        const patientName = "Patient";
+                    {% endif %}
+                    
+                    const message = `Registration successful! Thank you ${patientName}. Your information has been recorded in our system. Please take a seat in the waiting area and you will be called when a medical professional is ready to see you. Have a great day!`;
+                    
+                    const utterance = new SpeechSynthesisUtterance(message);
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1;
+                    utterance.volume = 0.7;
+                    
+                    // Try to use a female voice for more pleasant experience
+                    const femaleVoice = voices.find(voice => 
+                        voice.name.includes('Female') || 
+                        voice.name.includes('Zira') || 
+                        voice.name.includes('Hazel') ||
+                        voice.gender === 'female'
+                    );
+                    
+                    if (femaleVoice) {
+                        utterance.voice = femaleVoice;
+                    }
+                    
+                    setTimeout(() => {
+                        speechSynthesis.speak(utterance);
+                    }, 1500);
+                };
+                
+                if (speechSynthesis.getVoices().length > 0) {
+                    initSpeech();
+                } else {
+                    speechSynthesis.onvoiceschanged = initSpeech;
+                }
+            }
+        });
+        
+        // Feedback button interactions
+        document.querySelectorAll('.btn-group .btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Speak thank you message
+                if ('speechSynthesis' in window) {
+                    const thankYou = new SpeechSynthesisUtterance("Thank you for your feedback!");
+                    thankYou.rate = 1;
+                    thankYou.volume = 0.6;
+                    speechSynthesis.speak(thankYou);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Hospital Management System</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 25%, #90caf9 50%, #64b5f6 75%, #42a5f5 100%);
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(120, 144, 156, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(79, 195, 247, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(129, 212, 250, 0.3) 0%, transparent 50%),
+                linear-gradient(135deg, rgba(0, 150, 136, 0.1) 0%, rgba(0, 188, 212, 0.1) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Medical background elements */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10-10v4h4v2h-4v4h-2v-4h-4v-2h4v-4h2z'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        /* Home button */
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid rgba(0, 150, 136, 0.3);
+            border-radius: 50px;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #00695c;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .home-button:hover {
+            background: rgba(0, 150, 136, 0.1);
+            border-color: #00695c;
+            color: #00695c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .home-button i {
+            margin-right: 8px;
+        }
+        
+        .fullscreen-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #00695c;
+        }
+        .login-header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            color: #00695c;
+        }
+        .login-header p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            color: #004d40;
+        }
+        .login-header .fa-hospital-alt {
+            color: #00acc1;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
+        }
+        .login-options {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .choice-box {
+            width: 280px;
+            height: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .choice-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        .choice-box:hover::before {
+            transform: translateX(100%);
+        }
+        .choice-box:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
+        }
+        .choice-box.patient:hover {
+            border-color: #2e7d32;
+            box-shadow: 0 30px 60px rgba(46, 125, 50, 0.3);
+        }
+        .choice-box.doctor:hover {
+            border-color: #1565c0;
+            box-shadow: 0 30px 60px rgba(21, 101, 192, 0.3);
+        }
+        .choice-box.admin:hover {
+            border-color: #ef6c00;
+            box-shadow: 0 30px 60px rgba(239, 108, 0, 0.3);
+        }
+        .choice-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .choice-box:hover .choice-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+        .patient-icon {
+            color: #2e7d32;
+        }
+        .doctor-icon {
+            color: #1565c0;
+        }
+        .admin-icon {
+            color: #ef6c00;
+        }
+        .choice-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: #263238;
+        }
+        .choice-description {
+            font-size: 0.9rem;
+            color: #546e7a;
+            text-align: center;
+            padding: 0 1rem;
+            line-height: 1.4;
+        }
+        .choice-arrow {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .choice-box:hover .choice-arrow {
+            opacity: 1;
+            transform: translateX(5px);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .login-options {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .choice-box {
+                width: 250px;
+                height: 250px;
+            }
+            .login-header h1 {
+                font-size: 2.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .fullscreen-container {
+                padding: 1rem;
+            }
+            .choice-box {
+                width: 220px;
+                height: 220px;
+            }
+            .login-header h1 {
+                font-size: 2rem;
+            }
+            .choice-icon {
+                font-size: 3rem;
+            }
+            .home-button {
+                top: 10px;
+                right: 10px;
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Animations */
+        .choice-box {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .choice-box:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        .choice-box:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .choice-box:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-header {
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .home-button {
+            animation: slideInLeft 0.6s ease-out;
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Home Button -->
+    <a href="{{ url_for('index') }}" class="home-button">
+        <i class="fas fa-home"></i>Home
+    </a>
+    
+    <div class="fullscreen-container">
+        <!-- Header -->
+        <div class="login-header">
+            <i class="fas fa-hospital-alt fa-4x mb-3"></i>
+            <h1>Hospital Management System</h1>
+            <p>Choose your role to access the system</p>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="container-fluid">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 1050; max-width: 400px;">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Login Options -->
+        <div class="login-options">
+            <!-- Patient Login -->
+            <a href="{{ url_for('patient_login') }}" class="choice-box patient">
+                <i class="fas fa-user-injured choice-icon patient-icon"></i>
+                <div class="choice-title">Patient Portal</div>
+                <div class="choice-description">
+                    Access your medical forms and submit health information using our AI voice assistant
+                </div>
+                <div class="choice-arrow">
+                    <i class="fas fa-arrow-right text-success"></i>
+                </div>
+            </a>
+
+            <!-- Doctor Login -->
+            <a href="{{ url_for('doctor_login') }}" class="choice-box doctor">
+                <i class="fas fa-user-md choice-icon doctor-icon"></i>
+                <div class="choice-title">Doctor Portal</div>
+                <div class="choice-description">
+                    View patient records, generate medical reports, and manage patient care
+                </div>
+                <div class="choice-arrow">
+                    <i class="fas fa-arrow-right text-primary"></i>
+                </div>
+            </a>
+
+            <!-- Admin Login -->
+            <a href="{{ url_for('admin_login') }}" class="choice-box admin">
+                <i class="fas fa-user-shield choice-icon admin-icon"></i>
+                <div class="choice-title">Admin Panel</div>
+                <div class="choice-description">
+                    Complete system control, user management, data export, and system configuration
+                </div>
+                <div class="choice-arrow">
+                    <i class="fas fa-arrow-right text-warning"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add smooth hover effects and animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const choiceBoxes = document.querySelectorAll('.choice-box');
+            
+            choiceBoxes.forEach(box => {
+                box.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-10px) scale(1.05)';
+                });
+                
+                box.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+            
+            // Add keyboard navigation (Press 1, 2, or 3 to quick access)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '1') {
+                    window.location.href = '{{ url_for("patient_login") }}';
+                } else if (e.key === '2') {
+                    window.location.href = '{{ url_for("doctor_login") }}';
+                } else if (e.key === '3') {
+                    window.location.href = '{{ url_for("admin_login") }}';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
